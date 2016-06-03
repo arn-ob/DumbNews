@@ -7,6 +7,8 @@
     using Lib.Entity;
     using System.Threading.Tasks;
     using Lib.Model;
+    using System.Net;
+
     [Route("api/[controller]")]
     public class FeedController : Controller
     {
@@ -18,37 +20,44 @@
             this.tableClient = tableClient;
             this.repository = new Repository<Feed>(tableClient);
         }
-        // GET: api/values
+
+        [HttpGet("{partitionKey}")]
+        public async Task<IEnumerable<Feed>> Get(string partitionKey)
+        {
+            return (await repository.Get(partitionKey)).Results;
+        }
+
         [HttpGet]
-        public IEnumerable<string> Get()
+        public async Task<Feed> Get(string name, string type)
         {
-            return new string[] { "value1", "value2" };
+            return (await repository.Get(type, name)).Result as Feed;
         }
 
-        // GET api/values/5
-        [HttpGet("{id}")]
-        public string Get(int id)
-        {
-            return "value";
-        }
-
-        // POST api/values
         [HttpPost]
-        public async Task<TableResult> Post([FromBody]FeedRequest feedReq)
+        public async Task<IActionResult> Post([FromBody]FeedRequest feedReq)
         {
-            return await repository.Insert(new Feed(feedReq.Url, feedReq.Name));
+            if(!ModelState.IsValid)
+            {
+                return HttpBadRequest(ModelState);
+            }
+            var result = await repository.Insert(new Feed(feedReq.Url, feedReq.Name, feedReq.Type));
+            return new CreatedResult("/Feed", result.Result);
         }
 
-        // PUT api/values/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody]string value)
+        [HttpPut]
+        public async Task<Feed> Put([FromBody]Feed feed)
         {
+            return (await repository.Update(feed)).Result as Feed;
         }
 
-        // DELETE api/values/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
+        [HttpDelete]
+        public async Task<IActionResult> Delete(string name, string type)
         {
+            var result = await repository.Delete(type, name);
+            return new ObjectResult(result.Result)
+            {
+                StatusCode = (int)HttpStatusCode.NoContent
+            };
         }
     }
 }
