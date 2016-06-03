@@ -10,6 +10,8 @@ using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
 using System.Reflection;
 using DumbNews.Lib.Utility;
+using Microsoft.WindowsAzure.Storage.Queue;
+using DumbNews.Lib.Constants;
 
 namespace DumbNews
 {
@@ -25,18 +27,23 @@ namespace DumbNews
                 .AddEnvironmentVariables();
             Configuration = builder.Build();
 
-            InitiateDbConnection();
-            ConfigureDb();
+            InitiateStorageAccountConnection();
+            ConfigureDbsAndQueues();
         }
 
-        private void InitiateDbConnection()
+        private void InitiateStorageAccountConnection()
         {
             CloudStorageAccount storageAccount = CloudStorageAccount.Parse(Configuration.GetSection("ConnectionStrings")["StorageConnection"]);
             TableClient = storageAccount.CreateCloudTableClient();
+     
+            QueueClient = storageAccount.CreateCloudQueueClient();
         }
 
         public IConfigurationRoot Configuration { get; set; }
         public CloudTableClient TableClient { get; private set; }
+        public CloudQueueClient QueueClient { get; private set; }
+        public CloudQueue FeedQueue { get; private set; }
+
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
@@ -51,6 +58,7 @@ namespace DumbNews
             services.Configure<ConnectionStringsSettings>(Configuration.GetSection("ConnectionStrings"));
 
             services.AddSingleton((svc) => this.TableClient);
+            services.AddSingleton((svc) => this.FeedQueue);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -80,13 +88,19 @@ namespace DumbNews
 
         }
 
-        private void ConfigureDb()
+        private void ConfigureDbsAndQueues()
         {
             var entities = ReflectionUtils.GetTypesInNamespace(typeof(Startup).GetTypeInfo().Assembly, "DumbNews.Lib.Entity");
             foreach (var entity in entities)
             {
                 InstantiateTable(entity, TableClient);
             }
+
+            CloudQueue queue = QueueClient.GetQueueReference(QueueNames.FeedQueueName);
+            var  Task = queue.CreateIfNotExistsAsync();
+            Task.Wait();
+            
+            this.FeedQueue = queue;
         }
 
         private void InstantiateTable(Type entity, CloudTableClient tableClient)

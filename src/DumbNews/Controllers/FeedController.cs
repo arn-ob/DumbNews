@@ -8,17 +8,21 @@
     using System.Threading.Tasks;
     using Lib.Model;
     using System.Net;
+    using Microsoft.WindowsAzure.Storage.Queue;
+    using Newtonsoft.Json;
 
     [Route("api/[controller]")]
     public class FeedController : Controller
     {
         private CloudTableClient tableClient;
         private Repository<Feed> repository;
+        private CloudQueue feedQueue;
 
-        public FeedController(CloudTableClient tableClient)
+        public FeedController(CloudTableClient tableClient, CloudQueue feedQueue)
         {
             this.tableClient = tableClient;
             this.repository = new Repository<Feed>(tableClient);
+            this.feedQueue = feedQueue;
         }
 
         [HttpGet("{partitionKey}")]
@@ -41,6 +45,10 @@
                 return HttpBadRequest(ModelState);
             }
             var result = await repository.Insert(new Feed(feedReq.Url, feedReq.Name, feedReq.Type));
+
+            CloudQueueMessage message = new CloudQueueMessage(JsonConvert.SerializeObject(result));
+            await feedQueue.AddMessageAsync(message);
+
             return new CreatedResult("/Feed", result.Result);
         }
 
