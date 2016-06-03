@@ -8,6 +8,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using DumbNews.Lib.Filters;
+using Microsoft.Extensions.Configuration.Memory;
+using DumbNews.Lib.Options;
 
 namespace DumbNews
 {
@@ -34,6 +36,9 @@ namespace DumbNews
             {
                 o.Filters.Add(new ExceptionFilter(this.loggerFactory));
             });
+
+            services.AddOptions();
+            services.Configure<ConnectionStringsSettings>(Configuration.GetSection("ConnectionStrings"));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
