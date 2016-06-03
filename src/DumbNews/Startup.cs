@@ -1,15 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNet.Builder;
+﻿using Microsoft.AspNet.Builder;
 using Microsoft.AspNet.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using DumbNews.Lib.Filters;
-using Microsoft.Extensions.Configuration.Memory;
 using DumbNews.Lib.Options;
+using System;
+using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Table;
+using System.Reflection;
+using DumbNews.Lib.Utility;
 
 namespace DumbNews
 {
@@ -24,9 +24,19 @@ namespace DumbNews
                 .AddJsonFile("appsettings.json")
                 .AddEnvironmentVariables();
             Configuration = builder.Build();
+
+            InitiateDbConnection();
+            ConfigureDb();
+        }
+
+        private void InitiateDbConnection()
+        {
+            CloudStorageAccount storageAccount = CloudStorageAccount.Parse(Configuration.GetSection("ConnectionStrings")["StorageConnection"]);
+            TableClient = storageAccount.CreateCloudTableClient();
         }
 
         public IConfigurationRoot Configuration { get; set; }
+        public CloudTableClient TableClient { get; private set; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
@@ -39,6 +49,8 @@ namespace DumbNews
 
             services.AddOptions();
             services.Configure<ConnectionStringsSettings>(Configuration.GetSection("ConnectionStrings"));
+
+            services.AddSingleton((svc) => this.TableClient);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -64,11 +76,31 @@ namespace DumbNews
             app.UseStaticFiles();
 
             app.UseMvc();
+
+
         }
+
+        private void ConfigureDb()
+        {
+            var entities = ReflectionUtils.GetTypesInNamespace(typeof(Startup).GetTypeInfo().Assembly, "DumbNews.Lib.Entity");
+            foreach (var entity in entities)
+            {
+                InstantiateTable(entity, TableClient);
+            }
+        }
+
+        private void InstantiateTable(Type entity, CloudTableClient tableClient)
+        {
+            var table = tableClient.GetTableReference(string.Concat(entity.Name, "s"));
+            var Task = table.CreateIfNotExistsAsync();
+            Task.Wait();
+        }
+
 
         // Entry point for the application.
         public static void Main(string[] args)
         {
+
             WebApplication.Run<Startup>(args);
         }
     }

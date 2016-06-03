@@ -1,22 +1,17 @@
-﻿using System.Collections.Generic;
-using Microsoft.AspNet.Mvc;
-using Microsoft.WindowsAzure.Storage;
-using Microsoft.Extensions.OptionsModel;
-using DumbNews.Lib.Options;
-
-// For more information on enabling Web API for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
-
-namespace DumbNews.Controllers
+﻿namespace DumbNews.Controllers
 {
+    using System.Collections.Generic;
+    using Microsoft.AspNet.Mvc;
+    using Microsoft.WindowsAzure.Storage.Table;
+
     [Route("api/[controller]")]
     public class FeedController : Controller
     {
-        private IOptions<ConnectionStringsSettings> connectionSettings;
+        private CloudTableClient tableClient;
 
-        public FeedController(IOptions<ConnectionStringsSettings> connectionSettings)
+        public FeedController(CloudTableClient tableClient)
         {
-            this.connectionSettings = connectionSettings;
-            CloudStorageAccount storageAccount = CloudStorageAccount.Parse(connectionSettings.Value.StorageConnection);
+            this.tableClient = tableClient;          
         }
         // GET: api/values
         [HttpGet]
