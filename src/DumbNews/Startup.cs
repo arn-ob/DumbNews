@@ -81,6 +81,7 @@ namespace DumbNews
 
             app.UseIISPlatformHandler();
 
+            app.UseDefaultFiles();
             app.UseStaticFiles();
 
             app.UseMvc();
