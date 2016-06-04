@@ -46,7 +46,7 @@
             }
             var result = await repository.Insert(new Feed(feedReq.Url, feedReq.Name, feedReq.Type));
 
-            CloudQueueMessage message = new CloudQueueMessage(JsonConvert.SerializeObject(result));
+            CloudQueueMessage message = new CloudQueueMessage(JsonConvert.SerializeObject(result.Result));
             await feedQueue.AddMessageAsync(message);
 
             return new CreatedResult("/Feed", result.Result);
