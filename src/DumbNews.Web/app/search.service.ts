@@ -9,13 +9,13 @@ export class SearchService {
 
     constructor(private http: Http) { }
 
-    searchNews(query: string): Observable<{}> {
+    searchNews(query: string) {
         let headers = new Headers({ 'api-key': 'DDD2358D1B1FB7D753F2ECAD26BD9308' });
         let options = new RequestOptions({ headers: headers });
 
-        return this.http.get('https://dumbnews.search.windows.net/indexes/feeds/docs?api-version=2015-02-28&search=' + query)
+        return this.http.get('https://dumbnews.search.windows.net/indexes/feeds/docs?api-version=2015-02-28&search=' + query, options)
             .map(this.extractData)
-            .catch(this.handleError);
+            
     }
 
     private extractData(res: Response) {

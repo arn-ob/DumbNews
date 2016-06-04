@@ -9,16 +9,29 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 var core_1 = require('@angular/core');
+var search_service_1 = require('./search.service');
 var SearchComponent = (function () {
-    function SearchComponent() {
+    function SearchComponent(searchService) {
+        this.searchService = searchService;
     }
     SearchComponent.prototype.ngOnInit = function () { };
+    SearchComponent.prototype.submit = function () {
+        var _this = this;
+        console.log(this.query);
+        this.searchService.searchNews(this.query)
+            .subscribe(function (result) {
+            _this.searchResult = result.value;
+        }, function (error) {
+            alert(error.message);
+        });
+    };
     SearchComponent = __decorate([
         core_1.Component({
             selector: 'search',
-            templateUrl: 'app/search.component.html'
+            templateUrl: 'app/search.component.html',
+            providers: [search_service_1.SearchService]
         }), 
-        __metadata('design:paramtypes', [])
+        __metadata('design:paramtypes', [search_service_1.SearchService])
     ], SearchComponent);
     return SearchComponent;
 }());

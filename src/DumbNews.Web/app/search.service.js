@@ -20,9 +20,8 @@ var SearchService = (function () {
     SearchService.prototype.searchNews = function (query) {
         var headers = new http_1.Headers({ 'api-key': 'DDD2358D1B1FB7D753F2ECAD26BD9308' });
         var options = new http_1.RequestOptions({ headers: headers });
-        return this.http.get('https://dumbnews.search.windows.net/indexes/feeds/docs?api-version=2015-02-28&search=' + query)
-            .map(this.extractData)
-            .catch(this.handleError);
+        return this.http.get('https://dumbnews.search.windows.net/indexes/feeds/docs?api-version=2015-02-28&search=' + query, options)
+            .map(this.extractData);
     };
     SearchService.prototype.extractData = function (res) {
         if (res.status < 200 || res.status >= 300) {
